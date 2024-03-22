@@ -3,6 +3,11 @@ import logging
 from threading import Thread
 from typing import Any, List, Optional, Tuple
 
+from llama_index.core.settings import (
+    Settings,
+    callback_manager_from_settings_or_context,
+    llm_from_settings_or_context,
+)
 from llama_index.legacy.callbacks import CallbackManager, trace_method
 from llama_index.legacy.chat_engine.types import (
     AgentChatResponse,
@@ -103,8 +108,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         **kwargs: Any,
     ) -> "CondensePlusContextChatEngine":
         """Initialize a CondensePlusContextChatEngine from default parameters."""
-        service_context = service_context or ServiceContext.from_defaults()
-        llm = service_context.llm
+        llm = llm_from_settings_or_context(Settings, service_context)
         chat_history = chat_history or []
         memory = memory or ChatMemoryBuffer.from_defaults(
             chat_history=chat_history, token_limit=llm.metadata.context_window - 256
@@ -117,7 +121,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
             context_prompt=context_prompt,
             condense_prompt=condense_prompt,
             skip_condense=skip_condense,
-            callback_manager=service_context.callback_manager,
+            callback_manager=callback_manager_from_settings_or_context(
+                Settings, service_context
+            ),
             node_postprocessors=node_postprocessors,
             system_prompt=system_prompt,
             verbose=verbose,
